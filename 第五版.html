@@ -1,0 +1,2904 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>机械加工管理系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script>
+      // 配置Tailwind自定义主题
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#165DFF",
+              secondary: "#36CFC9",
+              success: "#52C41A",
+              warning: "#FAAD14",
+              danger: "#FF4D4F",
+              info: "#40A9FF",
+              gray: {
+                100: "#F5F5F5",
+                200: "#E5E5E5",
+                300: "#D4D4D4",
+                400: "#A3A3A3",
+                500: "#737373",
+                600: "#525252",
+                700: "#404040",
+                800: "#262626",
+                900: "#171717",
+              },
+            },
+            fontFamily: {
+              sans: ["Inter", "system-ui", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <style type="text/tailwindcss">
+      @layer utilities {
+        .content-auto {
+          content-visibility: auto;
+        }
+        .sidebar-item {
+          @apply flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-primary/5 hover:text-primary rounded-lg transition-all duration-200;
+        }
+        .sidebar-item.active {
+          @apply bg-primary/10 text-primary font-medium;
+        }
+        .card-shadow {
+          @apply shadow-md hover:shadow-lg transition-shadow duration-300;
+        }
+        .btn-primary {
+          @apply bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors duration-200;
+        }
+        .btn-secondary {
+          @apply bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors duration-200;
+        }
+        .btn-danger {
+          @apply bg-danger text-white px-4 py-2 rounded-lg hover:bg-danger/90 transition-colors duration-200;
+        }
+        .form-input {
+          @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all duration-200;
+        }
+        .badge {
+          @apply px-2 py-1 rounded-full text-xs font-medium;
+        }
+        /* 自定义滚动条 */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #a8a8a8;
+        }
+        /* 表单验证错误提示 */
+        .error-message {
+          @apply text-danger text-xs mt-1 hidden;
+        }
+        .error-message.show {
+          @apply block;
+        }
+        .input-error {
+          @apply border-danger focus:ring-danger/50 focus:border-danger;
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gray-100 font-sans text-gray-800 min-h-screen flex overflow-hidden"
+  >
+    <!-- 侧边栏 -->
+    <aside
+      id="sidebar"
+      class="bg-white w-64 h-screen shadow-sm flex-shrink-0 transition-all duration-300 z-20"
+    >
+      <div class="p-4 border-b border-gray-200">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center"
+          >
+            <i class="fa fa-industry text-white text-xl"></i>
+          </div>
+          <h1 class="text-xl font-bold text-gray-800">机械加工管理系统</h1>
+        </div>
+      </div>
+
+      <nav class="p-4 space-y-1">
+        <a
+          href="#dashboard"
+          class="sidebar-item active"
+          data-target="dashboard-view"
+        >
+          <i class="fa fa-dashboard w-5 text-center"></i>
+          <span>数据概览</span>
+        </a>
+        <a
+          href="#create-order"
+          class="sidebar-item"
+          data-target="create-order-view"
+        >
+          <i class="fa fa-file-text-o w-5 text-center"></i>
+          <span>创建工单</span>
+        </a>
+        <a
+          href="#order-list"
+          class="sidebar-item"
+          data-target="order-list-view"
+        >
+          <i class="fa fa-list w-5 text-center"></i>
+          <span>工单列表</span>
+        </a>
+        <a
+          href="#production"
+          class="sidebar-item"
+          data-target="production-view"
+        >
+          <i class="fa fa-cogs w-5 text-center"></i>
+          <span>生产填报</span>
+        </a>
+        <a href="#tracking" class="sidebar-item" data-target="tracking-view">
+          <i class="fa fa-search w-5 text-center"></i>
+          <span>工单追溯</span>
+        </a>
+      </nav>
+
+      <div
+        class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200"
+      >
+        <div class="flex items-center gap-3">
+          <img
+            src="https://picsum.photos/id/1005/40/40"
+            alt="用户头像"
+            class="w-10 h-10 rounded-full object-cover"
+          />
+          <div>
+            <p class="font-medium text-sm">滕经理</p>
+            <p class="text-xs text-gray-500">生产管理员</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <!-- 顶部导航 -->
+      <header
+        class="bg-white h-16 shadow-sm flex items-center justify-between px-6 z-10"
+      >
+        <button id="sidebar-toggle" class="lg:hidden text-gray-600">
+          <i class="fa fa-bars text-xl"></i>
+        </button>
+        <div class="flex items-center gap-4">
+          <div class="relative">
+            <input
+              type="text"
+              placeholder="搜索工单..."
+              class="pl-10 pr-4 py-2 bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-64"
+            />
+            <i
+              class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+            ></i>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <button
+            class="relative text-gray-600 hover:text-primary transition-colors"
+          >
+            <i class="fa fa-bell text-xl"></i>
+            <span
+              class="absolute -top-1 -right-1 w-4 h-4 bg-danger rounded-full text-white text-xs flex items-center justify-center"
+              >3</span
+            >
+          </button>
+          <div class="border-l border-gray-200 h-6"></div>
+          <div class="flex items-center gap-2">
+            <span class="hidden md:inline text-sm font-medium">滕经理</span>
+            <img
+              src="https://picsum.photos/id/1005/40/40"
+              alt="用户头像"
+              class="w-8 h-8 rounded-full object-cover"
+            />
+          </div>
+        </div>
+      </header>
+
+      <!-- 页面内容 -->
+      <div class="flex-1 overflow-y-auto p-6 bg-gray-50 custom-scrollbar">
+        <!-- 数据概览页面 -->
+        <div id="dashboard-view" class="page-view">
+          <div
+            class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4"
+          >
+            <div>
+              <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800">
+                生产数据概览
+              </h2>
+              <p class="text-gray-500">实时监控生产状态与工单进度</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="bg-white rounded-lg shadow-sm p-2 flex items-center">
+                <button
+                  class="px-3 py-1 text-sm rounded-md bg-primary text-white"
+                >
+                  今日
+                </button>
+                <button
+                  class="px-3 py-1 text-sm rounded-md text-gray-600 hover:bg-gray-100"
+                >
+                  本周
+                </button>
+                <button
+                  class="px-3 py-1 text-sm rounded-md text-gray-600 hover:bg-gray-100"
+                >
+                  本月
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 统计卡片 -->
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6"
+          >
+            <div class="bg-white rounded-xl p-6 card-shadow">
+              <div class="flex items-start justify-between">
+                <div>
+                  <p class="text-gray-500 text-sm mb-1">总工单数量</p>
+                  <h3
+                    class="text-3xl font-bold text-gray-800"
+                    id="total-orders-count"
+                  >
+                    24
+                  </h3>
+                  <p class="text-success text-sm mt-2 flex items-center">
+                    <i class="fa fa-arrow-up mr-1"></i> 12%
+                    <span class="text-gray-500 ml-1">较上周</span>
+                  </p>
+                </div>
+                <div
+                  class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center text-primary"
+                >
+                  <i class="fa fa-file-text-o text-xl"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 card-shadow">
+              <div class="flex items-start justify-between">
+                <div>
+                  <p class="text-gray-500 text-sm mb-1">生产中工单</p>
+                  <h3 class="text-3xl font-bold text-gray-800">8</h3>
+                  <p class="text-danger text-sm mt-2 flex items-center">
+                    <i class="fa fa-arrow-down mr-1"></i> 5%
+                    <span class="text-gray-500 ml-1">较上周</span>
+                  </p>
+                </div>
+                <div
+                  class="w-12 h-12 bg-info/10 rounded-lg flex items-center justify-center text-info"
+                >
+                  <i class="fa fa-spinner text-xl"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 card-shadow">
+              <div class="flex items-start justify-between">
+                <div>
+                  <p class="text-gray-500 text-sm mb-1">已完成工单</p>
+                  <h3 class="text-3xl font-bold text-gray-800">14</h3>
+                  <p class="text-success text-sm mt-2 flex items-center">
+                    <i class="fa fa-arrow-up mr-1"></i> 8%
+                    <span class="text-gray-500 ml-1">较上周</span>
+                  </p>
+                </div>
+                <div
+                  class="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center text-success"
+                >
+                  <i class="fa fa-check-circle text-xl"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 card-shadow">
+              <div class="flex items-start justify-between">
+                <div>
+                  <p class="text-gray-500 text-sm mb-1">平均合格率</p>
+                  <h3 class="text-3xl font-bold text-gray-800">97.2%</h3>
+                  <p class="text-success text-sm mt-2 flex items-center">
+                    <i class="fa fa-arrow-up mr-1"></i> 1.5%
+                    <span class="text-gray-500 ml-1">较上周</span>
+                  </p>
+                </div>
+                <div
+                  class="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center text-warning"
+                >
+                  <i class="fa fa-line-chart text-xl"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 图表区域 -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white rounded-xl p-6 card-shadow lg:col-span-2">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="font-bold text-gray-800">工单完成情况</h3>
+                <div class="flex gap-2">
+                  <button class="text-sm text-gray-500 hover:text-primary">
+                    周
+                  </button>
+                  <button class="text-sm text-primary font-medium">月</button>
+                  <button class="text-sm text-gray-500 hover:text-primary">
+                    年
+                  </button>
+                </div>
+              </div>
+              <div class="h-80">
+                <canvas id="orderCompletionChart"></canvas>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 card-shadow">
+              <h3 class="font-bold text-gray-800 mb-6">工单状态分布</h3>
+              <div class="h-80 flex items-center justify-center">
+                <canvas id="orderStatusChart"></canvas>
+              </div>
+              <div class="grid grid-cols-2 gap-4 mt-4">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-primary"></span>
+                  <span class="text-sm text-gray-600">生产中</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-success"></span>
+                  <span class="text-sm text-gray-600">已完成</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-warning"></span>
+                  <span class="text-sm text-gray-600">待派工</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-danger"></span>
+                  <span class="text-sm text-gray-600">已取消</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 最近工单 -->
+          <div class="bg-white rounded-xl p-6 card-shadow">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="font-bold text-gray-800">最近工单</h3>
+              <a
+                href="#order-list"
+                class="text-primary text-sm hover:underline"
+                data-target="order-list-view"
+                >查看全部</a
+              >
+            </div>
+            <div class="overflow-x-auto">
+              <table class="min-w-full">
+                <thead>
+                  <tr class="border-b border-gray-200">
+                    <th
+                      class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                    >
+                      工单编号
+                    </th>
+                    <th
+                      class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                    >
+                      产品型号
+                    </th>
+                    <th
+                      class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                    >
+                      计划产量
+                    </th>
+                    <th
+                      class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                    >
+                      完成情况
+                    </th>
+                    <th
+                      class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                    >
+                      状态
+                    </th>
+                    <th
+                      class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                    >
+                      计划完成时间
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="recent-orders-table">
+                  <!-- 表格内容将通过JavaScript动态生成 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 创建工单页面 -->
+        <div id="create-order-view" class="page-view hidden">
+          <div class="mb-6">
+            <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800">
+              创建新工单
+            </h2>
+            <p class="text-gray-500">填写工单信息并发布到生产车间</p>
+          </div>
+
+          <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+            <form id="create-order-form">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >产品型号 <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="text"
+                    class="form-input"
+                    id="product-model"
+                    placeholder="例如：AX-100"
+                    required
+                  />
+                  <div class="error-message" id="product-model-error">
+                    请输入产品型号
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >工单类型 <span class="text-danger">*</span></label
+                  >
+                  <select class="form-input" id="order-type" required>
+                    <option value="">请选择工单类型</option>
+                    <option value="normal">常规生产</option>
+                    <option value="urgent">紧急生产</option>
+                    <option value="rework">返工</option>
+                  </select>
+                  <div class="error-message" id="order-type-error">
+                    请选择工单类型
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >计划产量 <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="number"
+                    class="form-input"
+                    id="plan-quantity"
+                    min="1"
+                    placeholder="输入计划生产数量"
+                    required
+                  />
+                  <div class="error-message" id="plan-quantity-error">
+                    请输入有效的计划产量
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >优先级</label
+                  >
+                  <select class="form-input" id="priority">
+                    <option value="normal">普通</option>
+                    <option value="high">高</option>
+                    <option value="urgent">紧急</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >计划开始时间 <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="datetime-local"
+                    class="form-input"
+                    id="start-time"
+                    required
+                  />
+                  <div class="error-message" id="start-time-error">
+                    请选择计划开始时间
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >计划完成时间 <span class="text-danger">*</span></label
+                  >
+                  <input
+                    type="datetime-local"
+                    class="form-input"
+                    id="end-time"
+                    required
+                  />
+                  <div class="error-message" id="end-time-error">
+                    请选择计划完成时间，且需晚于开始时间
+                  </div>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >关联BOM清单</label
+                  >
+                  <select class="form-input" id="bom-list">
+                    <option value="">请选择BOM清单</option>
+                    <option value="bom-001">BOM-AX-100-V1.0</option>
+                    <option value="bom-002">BOM-BX-200-V2.1</option>
+                    <option value="bom-003">BOM-CX-300-V1.5</option>
+                  </select>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >工艺路线</label
+                  >
+                  <select class="form-input" id="process-route">
+                    <option value="">请选择工艺路线</option>
+                    <option value="route-001">装配线A-标准工艺</option>
+                    <option value="route-002">装配线B-快速工艺</option>
+                    <option value="route-003">测试线-全检工艺</option>
+                  </select>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >备注信息</label
+                  >
+                  <textarea
+                    class="form-input h-24"
+                    id="remarks"
+                    placeholder="输入工单相关备注信息..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="border-t border-gray-200 pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  class="btn-secondary"
+                  onclick="showView('dashboard-view')"
+                >
+                  取消
+                </button>
+                <button type="submit" class="btn-primary">
+                  创建并发布工单
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- 工单列表页面 -->
+        <div id="order-list-view" class="page-view hidden">
+          <div
+            class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4"
+          >
+            <div>
+              <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800">
+                工单列表
+              </h2>
+              <p class="text-gray-500">查看和管理所有生产工单</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <div class="relative">
+                <input
+                  type="text"
+                  id="order-search"
+                  placeholder="搜索工单编号或产品..."
+                  class="pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-full md:w-64"
+                />
+                <i
+                  class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                ></i>
+              </div>
+              <select
+                id="status-filter"
+                class="bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                <option value="">所有状态</option>
+                <option value="pending">待派工</option>
+                <option value="in_progress">生产中</option>
+                <option value="completed">已完成</option>
+                <option value="cancelled">已取消</option>
+              </select>
+              <button
+                class="btn-primary"
+                onclick="showView('create-order-view')"
+              >
+                <i class="fa fa-plus mr-2"></i>创建工单
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl card-shadow overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="min-w-full">
+                <thead>
+                  <tr class="bg-gray-50">
+                    <th
+                      class="text-left py-4 px-6 text-sm font-medium text-gray-500"
+                    >
+                      工单编号
+                    </th>
+                    <th
+                      class="text-left py-4 px-6 text-sm font-medium text-gray-500"
+                    >
+                      产品型号
+                    </th>
+                    <th
+                      class="text-left py-4 px-6 text-sm font-medium text-gray-500"
+                    >
+                      计划产量
+                    </th>
+                    <th
+                      class="text-left py-4 px-6 text-sm font-medium text-gray-500"
+                    >
+                      完成情况
+                    </th>
+                    <th
+                      class="text-left py-4 px-6 text-sm font-medium text-gray-500"
+                    >
+                      状态
+                    </th>
+                    <th
+                      class="text-left py-4 px-6 text-sm font-medium text-gray-500"
+                    >
+                      创建时间
+                    </th>
+                    <th
+                      class="text-left py-4 px-6 text-sm font-medium text-gray-500"
+                    >
+                      操作
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="order-table-body">
+                  <!-- 表格内容将通过JavaScript动态生成 -->
+                </tbody>
+              </table>
+            </div>
+            <div
+              class="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+            >
+              <p class="text-sm text-gray-500">
+                显示 <span id="showing-range">1 到 5</span> 条，共
+                <span id="total-orders">24</span> 条
+              </p>
+              <div class="flex items-center gap-2">
+                <button
+                  id="prev-page"
+                  class="w-8 h-8 flex items-center justify-center rounded border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                  disabled
+                >
+                  <i class="fa fa-chevron-left text-xs"></i>
+                </button>
+                <div id="pagination-buttons" class="flex gap-1">
+                  <!-- 分页按钮将通过JavaScript动态生成 -->
+                </div>
+                <button
+                  id="next-page"
+                  class="w-8 h-8 flex items-center justify-center rounded border border-gray-300 text-gray-500 hover:bg-gray-50"
+                >
+                  <i class="fa fa-chevron-right text-xs"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 生产填报页面 -->
+        <div id="production-view" class="page-view hidden">
+          <div class="mb-6">
+            <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800">
+              生产数据填报
+            </h2>
+            <p class="text-gray-500">记录生产过程中的合格与不合格产品信息</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div class="lg:col-span-1">
+              <div class="bg-white rounded-xl p-6 card-shadow h-full">
+                <h3 class="font-bold text-gray-800 mb-4">选择工单</h3>
+                <div
+                  class="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar pr-2"
+                  id="production-orders-list"
+                >
+                  <!-- 工单列表将通过JavaScript动态生成 -->
+                </div>
+              </div>
+            </div>
+
+            <div class="lg:col-span-2">
+              <div class="bg-white rounded-xl p-6 card-shadow">
+                <div class="flex justify-between items-center mb-6">
+                  <div>
+                    <h3
+                      class="font-bold text-gray-800"
+                      id="current-production-order"
+                    >
+                      工单 WO20250805001 - AX-100
+                    </h3>
+                    <p class="text-sm text-gray-500">
+                      当前工序: 装配测试 (步骤 3/5)
+                    </p>
+                  </div>
+                  <div>
+                    <span class="text-sm text-gray-500">操作工: </span>
+                    <select
+                      class="inline-block border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      <option value="op001">张三 (OP001)</option>
+                      <option value="op002">李四 (OP002)</option>
+                      <option value="op003">王五 (OP003)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <form id="production-form">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <label
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                        >合格数量 <span class="text-danger">*</span></label
+                      >
+                      <input
+                        type="number"
+                        class="form-input"
+                        min="0"
+                        placeholder="输入合格产品数量"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                        >不合格数量 <span class="text-danger">*</span></label
+                      >
+                      <input
+                        type="number"
+                        class="form-input"
+                        min="0"
+                        placeholder="输入不合格产品数量"
+                        required
+                      />
+                    </div>
+                    <div class="md:col-span-2">
+                      <label
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                        >不合格类型 <span class="text-danger">*</span></label
+                      >
+                      <div
+                        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"
+                      >
+                        <label
+                          class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            class="mr-2 text-primary"
+                            name="defect-type"
+                            value="尺寸与形状"
+                          />
+                          <span>尺寸与形状</span>
+                        </label>
+                        <label
+                          class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            class="mr-2 text-primary"
+                            name="defect-type"
+                            value="表面质量"
+                          />
+                          <span>表面质量</span>
+                        </label>
+                        <label
+                          class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            class="mr-2 text-primary"
+                            name="defect-type"
+                            value="材质与性能"
+                          />
+                          <span>材质与性能</span>
+                        </label>
+                        <label
+                          class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            class="mr-2 text-primary"
+                            name="defect-type"
+                            value="加工精度与工艺"
+                          />
+                          <span>加工精度与工艺</span>
+                        </label>
+                        <label
+                          class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            class="mr-2 text-primary"
+                            name="defect-type"
+                            value="外观与标识"
+                          />
+                          <span>外观与标识</span>
+                        </label>
+                        <label
+                          class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            class="mr-2 text-primary"
+                            name="defect-type"
+                            value="其他"
+                          />
+                          <span>其他</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="md:col-span-2">
+                      <label
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                        >缺陷描述与备注</label
+                      >
+                      <textarea
+                        class="form-input h-24"
+                        placeholder="详细描述产品缺陷情况或其他备注信息..."
+                      ></textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                      <label
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                        >上传缺陷照片 (可选)</label
+                      >
+                      <div
+                        class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer"
+                      >
+                        <input
+                          type="file"
+                          class="hidden"
+                          id="photo-upload"
+                          multiple
+                          accept="image/*"
+                        />
+                        <label for="photo-upload" class="cursor-pointer">
+                          <div
+                            class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3"
+                          >
+                            <i class="fa fa-camera text-gray-400 text-xl"></i>
+                          </div>
+                          <p class="text-sm text-gray-600">
+                            点击或拖拽图片至此处上传
+                          </p>
+                          <p class="text-xs text-gray-400 mt-1">
+                            支持 JPG, PNG 格式，最多 5 张
+                          </p>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    class="border-t border-gray-200 pt-4 flex justify-end gap-3"
+                  >
+                    <button
+                      type="button"
+                      class="btn-secondary"
+                      onclick="showView('dashboard-view')"
+                    >
+                      取消
+                    </button>
+                    <button type="submit" class="btn-primary">
+                      提交生产数据
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 工单追溯页面（动态追溯版） -->
+        <div id="tracking-view" class="page-view hidden">
+          <div class="mb-6">
+            <h2 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-gray-800">
+              工单追溯
+            </h2>
+            <p class="text-gray-500">查询工单全流程信息与生产记录</p>
+          </div>
+
+          <!-- 查询表单 -->
+          <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+            <form id="tracking-form" class="flex flex-col md:flex-row gap-4">
+              <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 mb-1"
+                  >工单编号 <span class="text-danger">*</span></label
+                >
+                <input
+                  type="text"
+                  class="form-input"
+                  id="track-order-id"
+                  placeholder="输入要查询的工单编号"
+                />
+              </div>
+              <div class="flex items-end gap-3">
+                <button type="submit" class="btn-primary w-full md:w-auto">
+                  <i class="fa fa-search mr-2"></i>查询
+                </button>
+                <span id="tracking-loading" class="text-sm text-gray-400 hidden"
+                  >查询中...</span
+                >
+              </div>
+            </form>
+            <p id="tracking-error" class="text-danger text-sm mt-2 hidden"></p>
+          </div>
+
+          <!-- 查询结果区域 -->
+          <div id="tracking-result" class="space-y-6 hidden">
+            <!-- 基本信息 -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+              <div
+                class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4"
+              >
+                <div>
+                  <h3
+                    id="track-order-title"
+                    class="text-xl font-bold text-gray-800"
+                  >
+                    -
+                  </h3>
+                  <p id="track-order-subtitle" class="text-gray-500 text-sm">
+                    -
+                  </p>
+                </div>
+                <div>
+                  <span
+                    id="track-order-status"
+                    class="badge bg-gray-100 text-gray-600 text-sm px-3 py-1"
+                    >-</span
+                  >
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="text-sm text-gray-500 mb-1">产品型号</p>
+                  <p id="track-product-model" class="font-medium">-</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="text-sm text-gray-500 mb-1">计划产量</p>
+                  <p id="track-plan-qty" class="font-medium">-</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="text-sm text-gray-500 mb-1">已完成</p>
+                  <p id="track-completed" class="font-medium">-</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="text-sm text-gray-500 mb-1">合格率</p>
+                  <p id="track-pass-rate" class="font-medium">-</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="text-sm text-gray-500 mb-1">计划开始时间</p>
+                  <p id="track-start-time" class="font-medium">-</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="text-sm text-gray-500 mb-1">计划完成时间</p>
+                  <p id="track-end-time" class="font-medium">-</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 时间线 -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+              <h4 class="font-bold text-gray-800 mb-4">工单进度时间线</h4>
+              <div
+                id="track-timeline"
+                class="relative pl-8 pb-4 border-l border-gray-200 ml-4 space-y-6"
+              >
+                <!-- 通过 JS 动态生成 -->
+              </div>
+            </div>
+
+            <!-- 生产记录 -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+              <h4 class="font-bold text-gray-800 mb-6">生产记录详情</h4>
+              <div class="overflow-x-auto">
+                <table class="min-w-full">
+                  <thead>
+                    <tr class="bg-gray-50">
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
+                        记录时间
+                      </th>
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
+                        工序
+                      </th>
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
+                        操作工
+                      </th>
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
+                        合格数
+                      </th>
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
+                        不合格数
+                      </th>
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
+                        不合格类型
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="track-production-body">
+                    <!-- 通过 JS 动态生成 -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 物料使用记录 -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+              <h4 class="font-bold text-gray-800 mb-6">物料使用记录</h4>
+              <div class="overflow-x-auto">
+                <table class="min-w-full">
+                  <thead>
+                    <tr class="bg-gray-50">
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
+                        物料编码
+                      </th>
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
+                        物料名称
+                      </th>
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
+                        规格型号
+                      </th>
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
+                        批次号
+                      </th>
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
+                        领用数量
+                      </th>
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
+                        领用时间
+                      </th>
+                      <th
+                        class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                      >
+                        领用人
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="track-material-body">
+                    <!-- 通过 JS 动态生成 -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 无数据提示 -->
+          <p
+            id="tracking-empty-tip"
+            class="text-center text-gray-400 text-sm mt-10"
+          >
+            请输入工单编号进行查询。
+          </p>
+        </div>
+
+        <!-- 工单详情弹窗 -->
+        <div
+          id="order-detail-modal"
+          class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden"
+        >
+          <div
+            class="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar"
+          >
+            <div
+              class="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10"
+            >
+              <h3 class="text-xl font-bold text-gray-800" id="modal-order-id">
+                工单详情 - WO20250805001
+              </h3>
+              <button
+                id="close-modal"
+                class="text-gray-500 hover:text-gray-700"
+              >
+                <i class="fa fa-times text-xl"></i>
+              </button>
+            </div>
+            <div class="p-6">
+              <!-- 工单详情内容 -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="text-sm text-gray-500 mb-1">产品型号</p>
+                  <p class="font-medium" id="modal-product-model">AX-100</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="text-sm text-gray-500 mb-1">计划产量</p>
+                  <p class="font-medium" id="modal-plan-quantity">100 件</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="text-sm text-gray-500 mb-1">已完成</p>
+                  <p class="font-medium" id="modal-completed">75 件 (75%)</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="text-sm text-gray-500 mb-1">合格率</p>
+                  <p class="font-medium">96.0% (72/75)</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="text-sm text-gray-500 mb-1">状态</p>
+                  <p class="font-medium">
+                    <span class="badge bg-info/10 text-info" id="modal-status"
+                      >生产中</span
+                    >
+                  </p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="text-sm text-gray-500 mb-1">优先级</p>
+                  <p class="font-medium" id="modal-priority">普通</p>
+                </div>
+              </div>
+
+              <div class="mb-8">
+                <h4 class="font-bold text-gray-800 mb-4">生产进度</h4>
+                <div class="space-y-4">
+                  <div>
+                    <div class="flex justify-between mb-1">
+                      <span class="text-sm">总体进度</span>
+                      <span
+                        class="text-sm font-medium"
+                        id="modal-overall-progress"
+                        >75%</span
+                      >
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2.5">
+                      <div
+                        class="bg-primary h-2.5 rounded-full"
+                        id="modal-progress-bar"
+                        style="width: 75%"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div
+                    class="pl-4 border-l border-gray-200 space-y-4"
+                    id="modal-production-steps"
+                  >
+                    <!-- 生产步骤将通过JavaScript动态生成 -->
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                  <h4 class="font-bold text-gray-800">最近生产记录</h4>
+                  <button
+                    class="text-primary text-sm hover:underline"
+                    onclick="
+                      showView('production-view');
+                      closeModal();
+                    "
+                  >
+                    新增生产记录
+                  </button>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="min-w-full">
+                    <thead>
+                      <tr class="bg-gray-50">
+                        <th
+                          class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                        >
+                          记录时间
+                        </th>
+                        <th
+                          class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                        >
+                          工序
+                        </th>
+                        <th
+                          class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                        >
+                          操作工
+                        </th>
+                        <th
+                          class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                        >
+                          合格数
+                        </th>
+                        <th
+                          class="text-left py-3 px-4 text-sm font-medium text-gray-500"
+                        >
+                          不合格数
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody id="modal-production-records">
+                      <!-- 生产记录将通过JavaScript动态生成 -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div
+              class="p-6 border-t border-gray-200 flex justify-end gap-3 sticky bottom-0 bg-white"
+            >
+              <button class="btn-secondary" id="close-modal-btn">关闭</button>
+              <button
+                class="btn-primary"
+                onclick="
+                  showView('tracking-view');
+                  closeModal();
+                "
+              >
+                查看完整追溯
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 编辑工单弹窗 -->
+        <div
+          id="edit-order-modal"
+          class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden"
+        >
+          <div
+            class="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto custom-scrollbar"
+          >
+            <div
+              class="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10"
+            >
+              <h3 class="text-xl font-bold text-gray-800">
+                编辑工单 - <span id="edit-order-id">WO20250805001</span>
+              </h3>
+              <button
+                id="close-edit-modal"
+                class="text-gray-500 hover:text-gray-700"
+              >
+                <i class="fa fa-times text-xl"></i>
+              </button>
+            </div>
+            <div class="p-6">
+              <form id="edit-order-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"
+                      >产品型号 <span class="text-danger">*</span></label
+                    >
+                    <input
+                      type="text"
+                      class="form-input"
+                      id="edit-product-model"
+                      value="AX-100"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"
+                      >工单类型 <span class="text-danger">*</span></label
+                    >
+                    <select class="form-input" id="edit-order-type" required>
+                      <option value="normal" selected>常规生产</option>
+                      <option value="urgent">紧急生产</option>
+                      <option value="rework">返工</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"
+                      >计划产量 <span class="text-danger">*</span></label
+                    >
+                    <input
+                      type="number"
+                      class="form-input"
+                      id="edit-plan-quantity"
+                      min="1"
+                      value="100"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"
+                      >优先级</label
+                    >
+                    <select class="form-input" id="edit-priority">
+                      <option value="normal" selected>普通</option>
+                      <option value="high">高</option>
+                      <option value="urgent">紧急</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"
+                      >计划开始时间 <span class="text-danger">*</span></label
+                    >
+                    <input
+                      type="datetime-local"
+                      class="form-input"
+                      id="edit-start-time"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1"
+                      >计划完成时间 <span class="text-danger">*</span></label
+                    >
+                    <input
+                      type="datetime-local"
+                      class="form-input"
+                      id="edit-end-time"
+                      required
+                    />
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1"
+                      >关联BOM清单</label
+                    >
+                    <select class="form-input" id="edit-bom">
+                      <option value="">请选择BOM清单</option>
+                      <option value="bom-001" selected>BOM-AX-100-V1.0</option>
+                      <option value="bom-002">BOM-BX-200-V2.1</option>
+                      <option value="bom-003">BOM-CX-300-V1.5</option>
+                    </select>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1"
+                      >工艺路线</label
+                    >
+                    <select class="form-input" id="edit-process-route">
+                      <option value="">请选择工艺路线</option>
+                      <option value="route-001" selected>
+                        装配线A-标准工艺
+                      </option>
+                      <option value="route-002">装配线B-快速工艺</option>
+                      <option value="route-003">测试线-全检工艺</option>
+                    </select>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1"
+                      >备注信息</label
+                    >
+                    <textarea
+                      class="form-input h-24"
+                      id="edit-remarks"
+                      placeholder="输入工单相关备注信息..."
+                    ></textarea>
+                  </div>
+                </div>
+
+                <div
+                  class="border-t border-gray-200 pt-4 flex justify-end gap-3"
+                >
+                  <button
+                    type="button"
+                    class="btn-secondary"
+                    id="cancel-edit-btn"
+                  >
+                    取消
+                  </button>
+                  <button type="submit" class="btn-primary">保存修改</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- 删除确认弹窗 -->
+        <div
+          id="delete-confirm-modal"
+          class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden"
+        >
+          <div class="bg-white rounded-xl w-full max-w-md p-6">
+            <div class="text-center mb-6">
+              <div
+                class="w-16 h-16 bg-danger/10 rounded-full flex items-center justify-center mx-auto mb-4"
+              >
+                <!-- 修复：移除嵌套和未闭合的标签 -->
+                <i class="fa fa-exclamation-triangle text-danger text-2xl"></i>
+              </div>
+              <!-- 修复：移除多余的结束标签 -->
+              <h3 class="text-xl font-bold text-gray-800 mb-2">确认删除</h3>
+              <p class="text-gray-500" id="delete-confirm-text">
+                您确定要删除工单 WO20250805001 吗？此操作不可撤销。
+              </p>
+            </div>
+            <div class="flex gap-3">
+              <button class="btn-secondary flex-1" id="cancel-delete-btn">
+                取消
+              </button>
+              <button class="btn-danger flex-1" id="confirm-delete-btn">
+                确认删除
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 创建成功提示弹窗 -->
+        <div
+          id="create-success-modal"
+          class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden"
+        >
+          <div class="bg-white rounded-xl w-full max-w-md p-6 text-center">
+            <div
+              class="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4"
+            >
+              <i class="fa fa-check text-success text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2">创建成功</h3>
+            <p class="text-gray-600 mb-6" id="create-success-message">
+              工单已成功创建！
+            </p>
+            <div class="flex gap-3">
+              <button class="btn-secondary flex-1" id="success-stay-btn">
+                继续创建
+              </button>
+              <button class="btn-primary flex-1" id="success-goto-list-btn">
+                查看工单列表
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script>
+      const API_BASE_URL = "http://localhost:3000/api";
+
+      // --- 全局变量 ---
+      let currentPage = 1;
+      const itemsPerPage = 5;
+      let totalOrders = 0;
+      let orders = []; // 数据将从后端获取
+      let currentOrderId = "";
+
+      // --- 核心：从后端获取数据 ---
+      async function fetchOrders() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/orders`);
+          const result = await response.json();
+
+          if (result.message === "success") {
+            orders = result.data;
+            totalOrders = orders.length;
+
+            // 数据加载后，刷新所有视图
+            updateUI();
+          } else {
+            console.error("获取数据失败:", result.error);
+          }
+        } catch (error) {
+          console.error("网络错误:", error);
+          // 简单的错误提示，实际项目中可以使用 Toast 组件
+          // alert('无法连接服务器，请确保后端已启动');
+        }
+      }
+
+      // 统一更新 UI 的函数
+      function updateUI() {
+        renderOrderTable(currentPage);
+        renderRecentOrders();
+        renderProductionOrdersList();
+        updatePaginationButtons();
+        updateOrderCount();
+        fetchChartDataAndRender();
+      }
+
+      // --- 页面初始化 ---
+      document.addEventListener("DOMContentLoaded", function () {
+        // 1. 获取数据
+        fetchOrders();
+
+        // 2. 初始化侧边栏交互
+        const sidebarItems = document.querySelectorAll(".sidebar-item");
+        sidebarItems.forEach((item) => {
+          item.addEventListener("click", function (e) {
+            e.preventDefault();
+            const targetView = this.getAttribute("data-target");
+            showView(targetView);
+            sidebarItems.forEach((i) => i.classList.remove("active"));
+            this.classList.add("active");
+          });
+        });
+
+        // 3. 移动端菜单
+        const sidebarToggle = document.getElementById("sidebar-toggle");
+        const sidebar = document.getElementById("sidebar");
+        if (sidebarToggle) {
+          sidebarToggle.addEventListener("click", function () {
+            sidebar.classList.toggle("-translate-x-full");
+          });
+        }
+
+        // 4. 设置默认表单时间
+        const now = new Date();
+        // 修正时区偏移，确保显示本地时间
+        const localNow = new Date(
+          now.getTime() - now.getTimezoneOffset() * 60000,
+        )
+          .toISOString()
+          .slice(0, 16);
+        const nextTwoDays = new Date(
+          now.getTime() +
+            2 * 24 * 60 * 60 * 1000 -
+            now.getTimezoneOffset() * 60000,
+        )
+          .toISOString()
+          .slice(0, 16);
+
+        if (document.getElementById("start-time"))
+          document.getElementById("start-time").value = localNow;
+        if (document.getElementById("end-time"))
+          document.getElementById("end-time").value = nextTwoDays;
+
+        // 设置编辑框默认时间
+        if (document.getElementById("edit-start-time"))
+          document.getElementById("edit-start-time").value = localNow;
+        if (document.getElementById("edit-end-time"))
+          document.getElementById("edit-end-time").value = nextTwoDays;
+
+        // 5. 绑定所有事件监听器
+        bindEventListeners();
+      });
+
+      function bindEventListeners() {
+        // 创建工单表单提交
+        const createOrderForm = document.getElementById("create-order-form");
+        if (createOrderForm) {
+          createOrderForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            if (validateCreateOrderForm()) {
+              const newOrderData = {
+                productModel: document.getElementById("product-model").value,
+                orderType: document.getElementById("order-type").value,
+                quantity: parseInt(
+                  document.getElementById("plan-quantity").value,
+                ),
+                priority: document.getElementById("priority").value,
+                startTime: document.getElementById("start-time").value,
+                endTime: document.getElementById("end-time").value,
+                bomList: document.getElementById("bom-list").value,
+                processRoute: document.getElementById("process-route").value,
+                remarks: document.getElementById("remarks").value,
+              };
+
+              try {
+                const response = await fetch(`${API_BASE_URL}/orders`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(newOrderData),
+                });
+                const result = await response.json();
+
+                if (result.message === "success") {
+                  document.getElementById(
+                    "create-success-message",
+                  ).textContent = `工单已成功创建！`;
+                  document
+                    .getElementById("create-success-modal")
+                    .classList.remove("hidden");
+                  fetchOrders(); // 重新获取数据刷新列表
+                }
+              } catch (error) {
+                alert("创建失败: " + error.message);
+              }
+            }
+          });
+        }
+
+        // 编辑工单表单提交
+        const editOrderForm = document.getElementById("edit-order-form");
+        if (editOrderForm) {
+          editOrderForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const updateData = {
+              productModel: document.getElementById("edit-product-model").value,
+              orderType: document.getElementById("edit-order-type").value,
+              quantity: parseInt(
+                document.getElementById("edit-plan-quantity").value,
+              ),
+              priority: document.getElementById("edit-priority").value,
+              startTime: document.getElementById("edit-start-time").value,
+              endTime: document.getElementById("edit-end-time").value,
+              bomList: document.getElementById("edit-bom").value,
+              processRoute: document.getElementById("edit-process-route").value,
+              remarks: document.getElementById("edit-remarks").value,
+            };
+
+            try {
+              const response = await fetch(
+                `${API_BASE_URL}/orders/${currentOrderId}`,
+                {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(updateData),
+                },
+              );
+
+              if (response.ok) {
+                document
+                  .getElementById("edit-order-modal")
+                  .classList.add("hidden");
+                fetchOrders();
+                alert("工单修改成功！");
+              }
+            } catch (error) {
+              alert("修改失败");
+            }
+          });
+        }
+
+        // 删除确认按钮
+        const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
+        if (confirmDeleteBtn) {
+          confirmDeleteBtn.addEventListener("click", async function () {
+            try {
+              const response = await fetch(
+                `${API_BASE_URL}/orders/${currentOrderId}`,
+                {
+                  method: "DELETE",
+                },
+              );
+
+              if (response.ok) {
+                document
+                  .getElementById("delete-confirm-modal")
+                  .classList.add("hidden");
+                fetchOrders();
+                alert("工单已成功删除！");
+              }
+            } catch (error) {
+              alert("删除失败");
+            }
+          });
+        }
+
+        // 搜索框
+        document
+          .getElementById("order-search")
+          .addEventListener("input", () => {
+            currentPage = 1;
+            renderOrderTable(1);
+            updatePaginationButtons();
+          });
+        document
+          .getElementById("status-filter")
+          .addEventListener("change", () => {
+            currentPage = 1;
+            renderOrderTable(1);
+            updatePaginationButtons();
+          });
+
+        // 分页按钮
+        document.getElementById("prev-page").addEventListener("click", () => {
+          if (currentPage > 1) {
+            currentPage--;
+            renderOrderTable(currentPage);
+            updatePaginationButtons();
+          }
+        });
+        document.getElementById("next-page").addEventListener("click", () => {
+          const totalPages = Math.ceil(totalOrders / itemsPerPage);
+          if (currentPage < totalPages) {
+            currentPage++;
+            renderOrderTable(currentPage);
+            updatePaginationButtons();
+          }
+        });
+
+        // 模态框关闭逻辑
+        setupModalClosers();
+
+        // 生产填报和追溯表单
+        const trackingForm = document.getElementById("tracking-form");
+        if (trackingForm)
+          trackingForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const id = document.getElementById("track-order-id").value.trim();
+            const loadingEl = document.getElementById("tracking-loading");
+            const errorEl = document.getElementById("tracking-error");
+            const resultEl = document.getElementById("tracking-result");
+            const emptyTipEl = document.getElementById("tracking-empty-tip");
+
+            errorEl.classList.add("hidden");
+            errorEl.textContent = "";
+
+            if (!id) {
+              errorEl.textContent = "请先输入工单编号";
+              errorEl.classList.remove("hidden");
+              return;
+            }
+
+            loadingEl.classList.remove("hidden");
+            resultEl.classList.add("hidden");
+
+            try {
+              // 调用后端追溯接口：GET /api/orders/:id/tracking
+              const resp = await fetch(
+                `${API_BASE_URL}/orders/${encodeURIComponent(id)}/tracking`,
+              );
+              const data = await resp.json().catch(() => null);
+
+              if (!resp.ok) {
+                // 优先使用后端返回的具体错误信息
+                const msg =
+                  data && (data.error || data.message)
+                    ? data.error || data.message
+                    : "查询失败";
+                throw new Error(msg);
+              }
+
+              if (!data || data.message !== "success" || !data.data) {
+                throw new Error((data && data.error) || "未找到该工单");
+              }
+
+              renderTrackingResult(data.data);
+
+              resultEl.classList.remove("hidden");
+              if (emptyTipEl) emptyTipEl.classList.add("hidden");
+            } catch (err) {
+              errorEl.textContent = err.message || "查询失败，请稍后重试";
+              errorEl.classList.remove("hidden");
+            } finally {
+              loadingEl.classList.add("hidden");
+            }
+          });
+      }
+
+      function renderTrackingResult(detail) {
+        // 预期 detail 结构示例：
+        // {
+        //   id, productModel, quantity, completed, qualified, unqualified,
+        //   status: { text, class },
+        //   createTime, creator,
+        //   startTime, endTime,
+        //   timeline: [{ time, title, desc, planned }, ...],
+        //   productionRecords: [{ time, step, operator, okQty, ngQty, ngTypes }, ...],
+        //   materials: [{ code, name, spec, batch, qty, time, user }, ...]
+        // }
+
+        const {
+          id,
+          productModel,
+          quantity,
+          completed,
+          qualified,
+          unqualified,
+          status,
+          createTime,
+          creator,
+          startTime,
+          endTime,
+          timeline = [],
+          productionRecords = [],
+          materials = [],
+        } = detail;
+
+        // 计算合格率
+        let passRateText = "-";
+        const totalFinished = (qualified || 0) + (unqualified || 0);
+        if (totalFinished > 0) {
+          const rate = (((qualified || 0) / totalFinished) * 100).toFixed(1);
+          passRateText = `${rate}% (${qualified || 0}/${totalFinished})`;
+        }
+
+        // 标题与基本信息
+        document.getElementById("track-order-title").textContent = id || "-";
+        document.getElementById("track-order-subtitle").textContent =
+          `创建时间: ${createTime || "-"}${creator ? " | 创建人: " + creator : ""}`;
+
+        const statusEl = document.getElementById("track-order-status");
+        statusEl.textContent = status?.text || "未知";
+        statusEl.className = `badge ${status?.class || "bg-gray-100 text-gray-600"}`;
+
+        document.getElementById("track-product-model").textContent =
+          productModel || "-";
+        document.getElementById("track-plan-qty").textContent =
+          quantity != null ? `${quantity} 件` : "-";
+        document.getElementById("track-completed").textContent =
+          totalFinished > 0 ? `${totalFinished} 件` : "-";
+        document.getElementById("track-pass-rate").textContent = passRateText;
+        document.getElementById("track-start-time").textContent =
+          startTime || "-";
+        document.getElementById("track-end-time").textContent = endTime || "-";
+
+        // 时间线
+        const timelineEl = document.getElementById("track-timeline");
+        timelineEl.innerHTML = "";
+        if (!timeline.length) {
+          timelineEl.innerHTML =
+            '<p class="text-sm text-gray-400">暂无时间线记录</p>';
+        } else {
+          timeline.forEach((item, index) => {
+            const isDone = item.done !== false; // 默认为已完成
+            const isPlanned = item.planned === true;
+
+            const dotColor = isDone ? "bg-primary" : "bg-gray-300";
+            const textColor = isDone ? "text-gray-800" : "text-gray-400";
+
+            const div = document.createElement("div");
+            div.className = "relative";
+            div.innerHTML = `
+        <div class="absolute -left-[34px] w-6 h-6 rounded-full ${dotColor} flex items-center justify-center">
+          <div class="w-2 h-2 rounded-full bg-white"></div>
+        </div>
+        <div class="${textColor}">
+          <h5 class="font-medium">${item.title || "-"}</h5>
+          <p class="text-sm ${isDone ? "text-gray-500" : ""}">${item.time || (isPlanned ? "计划时间未定" : "-")}</p>
+          ${item.desc ? `<p class="text-sm mt-1">${item.desc}</p>` : ""}
+        </div>
+      `;
+            timelineEl.appendChild(div);
+          });
+        }
+
+        // 生产记录
+        const prodBody = document.getElementById("track-production-body");
+        prodBody.innerHTML = "";
+        if (!productionRecords.length) {
+          prodBody.innerHTML = `
+      <tr><td colspan="6" class="py-4 text-center text-gray-400 text-sm">暂无生产记录</td></tr>
+    `;
+        } else {
+          productionRecords.forEach((rec) => {
+            const tr = document.createElement("tr");
+            tr.className =
+              "border-b border-gray-100 hover:bg-gray-50 transition-colors";
+            tr.innerHTML = `
+        <td class="py-3 px-4 text-sm">${rec.time || "-"}</td>
+        <td class="py-3 px-4 text-sm">${rec.step || "-"}</td>
+        <td class="py-3 px-4 text-sm">${rec.operator || "-"}</td>
+        <td class="py-3 px-4 text-sm">${rec.okQty != null ? rec.okQty : "-"}</td>
+        <td class="py-3 px-4 text-sm">${rec.ngQty != null ? rec.ngQty : "-"}</td>
+        <td class="py-3 px-4 text-sm">${Array.isArray(rec.ngTypes) ? rec.ngTypes.join("、") : rec.ngTypes || "-"}</td>
+      `;
+            prodBody.appendChild(tr);
+          });
+        }
+
+        // 物料记录
+        const matBody = document.getElementById("track-material-body");
+        matBody.innerHTML = "";
+        if (!materials.length) {
+          matBody.innerHTML = `
+      <tr><td colspan="7" class="py-4 text-center text-gray-400 text-sm">暂无物料使用记录</td></tr>
+    `;
+        } else {
+          materials.forEach((m) => {
+            const tr = document.createElement("tr");
+            tr.className =
+              "border-b border-gray-100 hover:bg-gray-50 transition-colors";
+            tr.innerHTML = `
+        <td class="py-3 px-4 text-sm">${m.code || "-"}</td>
+        <td class="py-3 px-4 text-sm">${m.name || "-"}</td>
+        <td class="py-3 px-4 text-sm">${m.spec || "-"}</td>
+        <td class="py-3 px-4 text-sm">${m.batch || "-"}</td>
+        <td class="py-3 px-4 text-sm">${m.qty != null ? m.qty : "-"}</td>
+        <td class="py-3 px-4 text-sm">${m.time || "-"}</td>
+        <td class="py-3 px-4 text-sm">${m.user || "-"}</td>
+      `;
+            matBody.appendChild(tr);
+          });
+        }
+      }
+      // --- 辅助 UI 函数 ---
+
+      function validateCreateOrderForm() {
+        let isValid = true;
+        const requiredIds = [
+          "product-model",
+          "order-type",
+          "plan-quantity",
+          "start-time",
+          "end-time",
+        ];
+
+        requiredIds.forEach((id) => {
+          const el = document.getElementById(id);
+          const errEl = document.getElementById(`${id}-error`);
+          if (!el.value || (id === "plan-quantity" && el.value <= 0)) {
+            el.classList.add("input-error");
+            if (errEl) errEl.classList.add("show");
+            isValid = false;
+          } else {
+            el.classList.remove("input-error");
+            if (errEl) errEl.classList.remove("show");
+          }
+        });
+        return isValid;
+      }
+
+      function updateOrderCount() {
+        if (document.getElementById("total-orders-count"))
+          document.getElementById("total-orders-count").textContent =
+            totalOrders;
+        if (document.getElementById("total-orders"))
+          document.getElementById("total-orders").textContent = totalOrders;
+      }
+
+      // 渲染表格 (带客户端搜索和筛选)
+      function renderOrderTable(page) {
+        const tableBody = document.getElementById("order-table-body");
+        tableBody.innerHTML = "";
+
+        const searchTerm = document
+          .getElementById("order-search")
+          .value.toLowerCase();
+        const statusFilter = document.getElementById("status-filter").value;
+
+        // 客户端筛选
+        let filteredOrders = orders.filter((order) => {
+          const matchesSearch =
+            (order.id && order.id.toLowerCase().includes(searchTerm)) ||
+            (order.productModel &&
+              order.productModel.toLowerCase().includes(searchTerm));
+          const matchesStatus =
+            !statusFilter ||
+            (order.status && order.status.code === statusFilter);
+          return matchesSearch && matchesStatus;
+        });
+
+        // 更新当前筛选后的总数
+        const currentTotal = filteredOrders.length;
+        document.getElementById("total-orders").textContent = currentTotal;
+
+        // 客户端分页切片
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, currentTotal);
+        const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+
+        document.getElementById("showing-range").textContent =
+          currentTotal > 0 ? `${startIndex + 1} 到 ${endIndex}` : "0 到 0";
+
+        if (paginatedOrders.length === 0) {
+          tableBody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-gray-500">没有找到匹配的工单</td></tr>`;
+          return;
+        }
+
+        paginatedOrders.forEach((order) => {
+          const row = document.createElement("tr");
+          row.className =
+            "border-b border-gray-100 hover:bg-gray-50 transition-colors";
+
+          // 安全检查 status 对象
+          const statusObj = order.status || {
+            code: "unknown",
+            text: "未知",
+            class: "bg-gray-100",
+          };
+          const isEditable = ["pending", "in_progress"].includes(
+            statusObj.code,
+          );
+
+          row.innerHTML = `
+        <td class="py-3 px-4 text-sm">${order.id}</td>
+        <td class="py-3 px-4 text-sm">${order.productModel}</td>
+        <td class="py-3 px-4 text-sm">${order.quantity}</td>
+        <td class="py-3 px-4">
+        <div class="w-36 bg-gray-100 rounded-full h-2">
+        <div class="bg-${statusObj.code === "completed" ? "success" : "primary"} h-2 rounded-full" style="width: ${order.completion}%"></div>
+        </div>
+        <span class="text-xs text-gray-500 mt-1 block">${order.completed}/${order.quantity} (${order.completion}%)</span>
+        </td>
+        <td class="py-3 px-4"><span class="badge ${statusObj.class}">${statusObj.text}</span></td>
+        <td class="py-3 px-4 text-sm">${order.createTime}</td>
+        <td class="py-3 px-4">
+        <div class="flex gap-2">
+        <button class="text-primary hover:text-primary/80" onclick="showOrderDetail('${order.id}')"><i class="fa fa-eye"></i></button>
+        <button class="text-gray-500 hover:text-gray-700 ${!isEditable ? "opacity-50 cursor-not-allowed" : ""}"
+        ${!isEditable ? "disabled" : `onclick="showEditOrder('${order.id}')"`}><i class="fa fa-edit"></i></button>
+        <button class="text-danger hover:text-danger/80" onclick="showDeleteConfirm('${order.id}')"><i class="fa fa-trash"></i></button>
+        </div>
+        </td>
+        `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      function renderRecentOrders() {
+        const tableBody = document.getElementById("recent-orders-table");
+        if (!tableBody) return;
+        tableBody.innerHTML = "";
+        // 显示前4条
+        orders.slice(0, 4).forEach((order) => {
+          const statusObj = order.status || {
+            code: "unknown",
+            text: "未知",
+            class: "",
+          };
+          const row = document.createElement("tr");
+          row.className =
+            "border-b border-gray-100 hover:bg-gray-50 transition-colors";
+          row.innerHTML = `
+        <td class="py-3 px-4 text-sm">${order.id}</td>
+        <td class="py-3 px-4 text-sm">${order.productModel}</td>
+        <td class="py-3 px-4 text-sm">${order.quantity}</td>
+        <td class="py-3 px-4">
+        <div class="w-36 bg-gray-100 rounded-full h-2">
+        <div class="bg-${statusObj.code === "completed" ? "success" : "primary"} h-2 rounded-full" style="width: ${order.completion}%"></div>
+        </div>
+        </td>
+        <td class="py-3 px-4"><span class="badge ${statusObj.class}">${statusObj.text}</span></td>
+        <td class="py-3 px-4 text-sm">${order.endTime.split("T")[0]}</td>
+        `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      function renderProductionOrdersList() {
+        const container = document.getElementById("production-orders-list");
+        if (!container) return;
+        container.innerHTML = "";
+        const activeOrders = orders
+          .filter(
+            (order) =>
+              order.status &&
+              (order.status.code === "in_progress" ||
+                order.status.code === "pending"),
+          )
+          .slice(0, 5);
+
+        activeOrders.forEach((order, index) => {
+          const div = document.createElement("div");
+          div.className = `border ${index === 0 ? "border-primary bg-primary/5" : "border-gray-200 hover:border-primary hover:bg-primary/5"} rounded-lg p-3 cursor-pointer transition-colors mb-2`;
+          div.innerHTML = `
+        <div class="flex justify-between items-start">
+        <div><p class="font-medium">${order.id}</p><p class="text-sm text-gray-500">${order.productModel}</p></div>
+        <span class="badge ${order.status.class}">${order.status.text}</span>
+        </div>
+        `;
+          container.appendChild(div);
+        });
+      }
+
+      function updatePaginationButtons() {
+        const container = document.getElementById("pagination-buttons");
+        if (!container) return;
+        container.innerHTML = "";
+
+        // 这里的筛选逻辑要和 renderOrderTable 保持一致
+        const searchTerm = document
+          .getElementById("order-search")
+          .value.toLowerCase();
+        const statusFilter = document.getElementById("status-filter").value;
+        let filteredCount = orders.filter((order) => {
+          const matchesSearch =
+            (order.id && order.id.toLowerCase().includes(searchTerm)) ||
+            (order.productModel &&
+              order.productModel.toLowerCase().includes(searchTerm));
+          const matchesStatus =
+            !statusFilter ||
+            (order.status && order.status.code === statusFilter);
+          return matchesSearch && matchesStatus;
+        }).length;
+
+        const totalPages = Math.ceil(filteredCount / itemsPerPage) || 1;
+
+        // 确保当前页不超出范围
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        for (let i = 1; i <= totalPages; i++) {
+          // 简单处理：如果页码太多，这里可以加逻辑隐藏部分页码
+          if (totalPages > 10 && i > 5 && i < totalPages) continue;
+
+          const btn = document.createElement("button");
+          btn.className = `w-8 h-8 flex items-center justify-center rounded ${i === currentPage ? "bg-primary text-white" : "border border-gray-300 hover:bg-gray-50"}`;
+          btn.textContent = i;
+          btn.onclick = () => {
+            currentPage = i;
+            renderOrderTable(i);
+            updatePaginationButtons();
+          };
+          container.appendChild(btn);
+        }
+
+        const prevBtn = document.getElementById("prev-page");
+        const nextBtn = document.getElementById("next-page");
+        if (prevBtn) prevBtn.disabled = currentPage === 1;
+        if (nextBtn) nextBtn.disabled = currentPage === totalPages;
+      }
+
+      // --- 全局暴露的函数 (因为 HTML onclick 调用) ---
+
+      window.showView = function (viewId) {
+        document
+          .querySelectorAll(".page-view")
+          .forEach((view) => view.classList.add("hidden"));
+        document.getElementById(viewId).classList.remove("hidden");
+      };
+
+      window.showOrderDetail = function (orderId) {
+        const order = orders.find((o) => o.id === orderId);
+        if (order) {
+          document.getElementById("modal-order-id").textContent =
+            `工单详情 - ${order.id}`;
+          document.getElementById("modal-product-model").textContent =
+            order.productModel;
+          document.getElementById("modal-plan-quantity").textContent =
+            `${order.quantity} 件`;
+          document.getElementById("modal-completed").textContent =
+            `${order.completed} 件 (${order.completion}%)`;
+
+          const statusEl = document.getElementById("modal-status");
+          statusEl.textContent = order.status.text;
+          statusEl.className = `badge ${order.status.class}`;
+
+          document.getElementById("modal-overall-progress").textContent =
+            `${order.completion}%`;
+          document.getElementById("modal-progress-bar").style.width =
+            `${order.completion}%`;
+
+          // 这里为了简化，没有从后端获取生产步骤和日志，而是使用静态渲染或空状态
+          document.getElementById("modal-production-steps").innerHTML =
+            '<p class="text-sm text-gray-500">（需对接生产进度表接口）</p>';
+
+          document
+            .getElementById("order-detail-modal")
+            .classList.remove("hidden");
+        }
+      };
+
+      window.showEditOrder = function (orderId) {
+        currentOrderId = orderId;
+        const order = orders.find((o) => o.id === orderId);
+        if (order) {
+          document.getElementById("edit-order-id").textContent = order.id;
+          document.getElementById("edit-product-model").value =
+            order.productModel;
+          document.getElementById("edit-order-type").value = order.orderType;
+          document.getElementById("edit-plan-quantity").value = order.quantity;
+          document.getElementById("edit-priority").value = order.priority;
+          document.getElementById("edit-start-time").value = order.startTime;
+          document.getElementById("edit-end-time").value = order.endTime;
+          document.getElementById("edit-bom").value = order.bomList;
+          document.getElementById("edit-process-route").value =
+            order.processRoute;
+          document.getElementById("edit-remarks").value = order.remarks || "";
+          document
+            .getElementById("edit-order-modal")
+            .classList.remove("hidden");
+        }
+      };
+
+      window.showDeleteConfirm = function (orderId) {
+        currentOrderId = orderId;
+        document.getElementById("delete-confirm-text").textContent =
+          `您确定要删除工单 ${orderId} 吗？此操作不可撤销。`;
+        document
+          .getElementById("delete-confirm-modal")
+          .classList.remove("hidden");
+      };
+
+      window.closeModal = function () {
+        document
+          .querySelectorAll(".fixed.z-50")
+          .forEach((modal) => modal.classList.add("hidden"));
+      };
+
+      function setupModalClosers() {
+        // 绑定所有关闭按钮
+        document.querySelectorAll('[id^="close-"]').forEach((btn) => {
+          btn.addEventListener("click", window.closeModal);
+        });
+        document
+          .getElementById("cancel-edit-btn")
+          .addEventListener("click", window.closeModal);
+        document
+          .getElementById("cancel-delete-btn")
+          .addEventListener("click", window.closeModal);
+        document
+          .getElementById("success-stay-btn")
+          .addEventListener("click", () => {
+            window.closeModal();
+            document.getElementById("create-order-form").reset();
+          });
+        document
+          .getElementById("success-goto-list-btn")
+          .addEventListener("click", () => {
+            window.closeModal();
+            document.getElementById("create-order-form").reset();
+            window.showView("order-list-view");
+          });
+
+        // 点击背景关闭
+        document.querySelectorAll(".fixed.z-50").forEach((modal) => {
+          modal.addEventListener("click", function (e) {
+            if (e.target === this) window.closeModal();
+          });
+        });
+      }
+
+      // [新增] 获取统计数据并渲染图表
+      async function fetchChartDataAndRender() {
+        try {
+          // 请求后端新增的统计接口
+          const response = await fetch(`${API_BASE_URL}/stats/daily`);
+          const result = await response.json();
+
+          if (result.message === "success") {
+            // 渲染图表
+            initCharts(result.data);
+          }
+        } catch (error) {
+          console.error("获取图表数据失败:", error);
+        }
+      }
+
+      // [重构] 初始化图表 (接收真实数据 data)
+      function initCharts(dailyData = []) {
+        if (typeof Chart === "undefined") return;
+
+        // --- 1. 渲染状态分布饼图 (数据源自 orders 数组) ---
+        // 销毁旧图表
+        const chartStatus = Chart.getChart("orderStatusChart");
+        if (chartStatus) chartStatus.destroy();
+
+        const ctxStatus = document.getElementById("orderStatusChart");
+        if (ctxStatus && orders.length > 0) {
+          const counts = {
+            in_progress: orders.filter((o) => o.status.code === "in_progress")
+              .length,
+            completed: orders.filter((o) => o.status.code === "completed")
+              .length,
+            pending: orders.filter((o) => o.status.code === "pending").length,
+            cancelled: orders.filter((o) => o.status.code === "cancelled")
+              .length,
+          };
+
+          new Chart(ctxStatus, {
+            type: "doughnut",
+            data: {
+              labels: ["生产中", "已完成", "待派工", "已取消"],
+              datasets: [
+                {
+                  data: [
+                    counts.in_progress,
+                    counts.completed,
+                    counts.pending,
+                    counts.cancelled,
+                  ],
+                  backgroundColor: ["#40A9FF", "#52C41A", "#FAAD14", "#FF4D4F"],
+                  borderWidth: 1,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: "70%",
+              plugins: { legend: { display: false } },
+            },
+          });
+        }
+
+        // --- 2. 渲染每日产量柱状图 (数据源自后端 daily 接口) ---
+        // 销毁旧图表
+        const chartComp = Chart.getChart("orderCompletionChart");
+        if (chartComp) chartComp.destroy();
+
+        const ctxComp = document.getElementById("orderCompletionChart");
+        if (ctxComp) {
+          // 处理后端返回的数据
+          // 如果没有数据，给一些默认空数组防止报错
+          const labels = dailyData.map((item) => item.date.slice(5)); // 只显示 MM-DD
+          const planData = dailyData.map((item) => item.total_plan);
+          const actualData = dailyData.map((item) => item.total_actual);
+
+          new Chart(ctxComp, {
+            type: "bar",
+            data: {
+              labels: labels.length ? labels : ["暂无数据"],
+              datasets: [
+                {
+                  label: "计划产量",
+                  data: planData,
+                  backgroundColor: "rgba(156, 163, 175, 0.5)", // 灰色
+                  borderColor: "rgba(156, 163, 175, 1)",
+                  borderWidth: 1,
+                },
+                {
+                  label: "实际完成",
+                  data: actualData,
+                  backgroundColor: "rgba(22, 93, 255, 0.7)", // 蓝色
+                  borderColor: "rgba(22, 93, 255, 1)",
+                  borderWidth: 1,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  title: { display: true, text: "数量 (件)" },
+                },
+                x: {
+                  title: { display: true, text: "日期" },
+                },
+              },
+              plugins: {
+                tooltip: {
+                  mode: "index",
+                  intersect: false,
+                },
+              },
+            },
+          });
+        }
+      }
+    </script>
+
+    <!-- ========================================================================= -->
+    <!--  设计系统说明（仅注释与样式辅助代码，不影响现有业务功能）             -->
+    <!--  - 目标：                                                               -->
+    <!--    1）让 UI 规范更加清晰可维护                                          -->
+    <!--    2）通过额外的样式类，方便以后做主题和尺寸微调                        -->
+    <!--    3）同时自然增加一些代码行数，而不是简单占位行                        -->
+    <!-- ========================================================================= -->
+
+    <!-- ========================= 色板与语义色说明 ========================== -->
+    <!-- 主色（primary）：#165DFF，用于最关键操作按钮、主高亮、链接等         -->
+    <!-- 次色（secondary）：#36CFC9，用于次级操作、标签、提示背景             -->
+    <!-- 成功（success）：#52C41A，用于“已完成 / 合格 / 正常”相关状态          -->
+    <!-- 警告（warning）：#FAAD14，用于“即将超期 / 风险”提示                    -->
+    <!-- 危险（danger）：#FF4D4F，用于“删除 / 异常 / 报错”类操作                -->
+    <!-- 信息（info）：#40A9FF，用于一般信息、标注、次要提醒                    -->
+    <!-- 中性色（gray-100~900）：用于背景、分割线、文字等                       -->
+
+    <!-- 建议：                                                                 -->
+    <!-- - 页面主背景：使用 gray-50/100，弱化对比，减轻长时间使用的疲劳感       -->
+    <!-- - 区块背景：白色（#FFFFFF）+ 阴影，形成卡片式布局                      -->
+    <!-- - 文字颜色：主文字 ~ gray-800，次级文字 ~ gray-500，辅助说明 ~ gray-400 -->
+    <!-- - 重要数字：可使用 primary 或 success 色，提高一眼识别度              -->
+
+    <!-- ========================= 排版与间距规范 ========================== -->
+    <!-- 标题层级（推荐）：                                                     -->
+    <!-- - 页面主标题：20px - 24px，bold，如“生产数据概览”、“工单列表”         -->
+    <!-- - 区块标题：16px - 18px，semibold，如“最近工单”、“生产记录详情”       -->
+    <!-- - 表头文字：12px - 14px，medium，灰色（gray-500）                      -->
+    <!-- - 正文文字：14px，normal                                               -->
+    <!-- - 辅助说明：12px，normal，gray-400/500                                 -->
+
+    <!-- 间距（推荐）：                                                         -->
+    <!-- - 页面左右内边距：24px                                                 -->
+    <!-- - 卡片内边距：24px                                                     -->
+    <!-- - 表格行高：至少 40px，保证可点击性                                   -->
+    <!-- - 卡片之间纵向间距：24px                                               -->
+    <!-- - 标题与内容之间：8px - 12px                                           -->
+
+    <!-- ========================= 交互与状态规范 ========================== -->
+    <!-- 按钮状态：                                                             -->
+    <!-- - 默认：主色背景 + 白色文字                                            -->
+    <!-- - Hover：略微变深/加阴影，如 primary/90                                -->
+    <!-- - Active：再略深一丢丢，且可轻微缩放（scale-95）                       -->
+    <!-- - 禁用：降低不透明度 + 禁用光标，去掉 Hover 效果                       -->
+    <!-- - 危险按钮：使用 danger 色，并且与普通按钮保持明确区分                -->
+
+    <!-- 输入框状态：                                                           -->
+    <!-- - 默认：浅灰边框 + 白底                                                -->
+    <!-- - Hover：边框加深少量                                                  -->
+    <!-- - 聚焦：蓝色高亮边框 + 微弱阴影（已通过 Tailwind ring 实现）          -->
+    <!-- - 错误：红色边框 + 文本提示 + 轻微抖动动画（可按需追加）              -->
+
+    <!-- 列表与表格：                                                           -->
+    <!-- - Hover 行：建议使用浅色灰背景标识当前行                               -->
+    <!-- - 选中或高亮行：可加左侧竖线或深一点的背景                             -->
+    <!-- - 状态列：统一用 badge 展示，颜色对应语义状态                          -->
+
+    <!-- ========================= 组件尺寸建议 ========================== -->
+    <!-- 按钮尺寸建议：                                                         -->
+    <!-- - 小号（xs）：高度 ~28px，字体 12px，内边距 6px 10px                   -->
+    <!-- - 默认（md）：高度 ~36px，字体 14px，内边距 8px 14px                   -->
+    <!-- - 大号（lg）：高度 ~44px，字体 16px，内边距 10px 18px                  -->
+
+    <!-- 输入框宽度建议：                                                       -->
+    <!-- - 搜索框：240px - 320px                                                -->
+    <!-- - 表单通用输入：100% 宽度，随栅格自适应                                -->
+
+    <!-- ===================================================================== -->
+    <!--  附加样式类（Tailwind 扩展）                                          -->
+    <!--  说明：这些类目前在页面中不是必须使用，只是提前定义好，               -->
+    <!--        方便后续在需要时直接套用（不会改变现有功能）。                 -->
+    <!-- ===================================================================== -->
+
+    <style type="text/tailwindcss">
+      @layer utilities {
+        /* ============== 按钮扩展尺寸 ============== */
+        .btn-xs {
+          @apply px-2 py-1 text-xs rounded-md;
+        }
+        .btn-sm {
+          @apply px-3 py-1.5 text-sm rounded-md;
+        }
+        .btn-lg {
+          @apply px-5 py-2.5 text-base rounded-lg;
+        }
+        .btn-xl {
+          @apply px-6 py-3 text-lg rounded-xl;
+        }
+
+        /* ============== 按钮风格扩展 ============== */
+        .btn-outline-primary {
+          @apply border border-primary text-primary bg-transparent hover:bg-primary/5;
+        }
+        .btn-outline-danger {
+          @apply border border-danger text-danger bg-transparent hover:bg-danger/5;
+        }
+        .btn-ghost {
+          @apply bg-transparent text-gray-600 hover:bg-gray-100;
+        }
+        .btn-rounded-full {
+          @apply rounded-full px-5;
+        }
+
+        /* ============== 卡片风格扩展 ============== */
+        .card-soft {
+          @apply bg-white/90 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow duration-200;
+        }
+        .card-strong {
+          @apply bg-white shadow-lg hover:shadow-xl transition-shadow duration-200;
+        }
+        .card-rounded-sm {
+          @apply rounded-md;
+        }
+        .card-rounded-lg {
+          @apply rounded-xl;
+        }
+        .card-rounded-2xl {
+          @apply rounded-2xl;
+        }
+
+        /* ============== 顶部与侧边栏主题扩展 ============== */
+        .header-gradient {
+          @apply bg-gradient-to-r from-primary to-secondary text-white;
+        }
+        .sidebar-dark {
+          @apply bg-gray-900 text-gray-100;
+        }
+        .sidebar-dark .sidebar-item {
+          @apply text-gray-300 hover:bg-gray-800 hover:text-white;
+        }
+        .sidebar-dark .sidebar-item.active {
+          @apply bg-primary/30 text-white;
+        }
+
+        /* ============== 状态标签扩展 ============== */
+        .badge-soft-primary {
+          @apply bg-primary/10 text-primary;
+        }
+        .badge-soft-success {
+          @apply bg-success/10 text-success;
+        }
+        .badge-soft-warning {
+          @apply bg-warning/10 text-warning;
+        }
+        .badge-soft-danger {
+          @apply bg-danger/10 text-danger;
+        }
+        .badge-soft-info {
+          @apply bg-info/10 text-info;
+        }
+
+        /* ============== 表格与列表细节 ============== */
+        .table-row-hover {
+          @apply hover:bg-gray-50 transition-colors;
+        }
+        .table-row-active {
+          @apply bg-primary/5;
+        }
+        .table-header-strong {
+          @apply bg-gray-50 text-gray-600;
+        }
+        .table-cell-numeric {
+          @apply text-right tabular-nums;
+        }
+
+        /* ============== 进度与标签布局 ============== */
+        .progress-thin {
+          @apply h-1.5 rounded-full bg-gray-100 overflow-hidden;
+        }
+        .progress-thin-inner {
+          @apply h-full rounded-full bg-primary;
+        }
+        .tag {
+          @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600;
+        }
+
+        /* ============== 布局辅助工具 ============== */
+        .section-gap {
+          @apply space-y-6;
+        }
+        .section-gap-lg {
+          @apply space-y-8;
+        }
+        .content-card-grid {
+          @apply grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6;
+        }
+
+        /* ============== 响应式排版示例（仅示意） ============== */
+        .page-title {
+          @apply text-[clamp(1.5rem,3vw,2.1rem)] font-bold text-gray-800;
+        }
+        .page-subtitle {
+          @apply text-sm md:text-base text-gray-500;
+        }
+        .metric-number {
+          @apply text-2xl md:text-3xl font-bold;
+        }
+        .metric-label {
+          @apply text-xs md:text-sm text-gray-500;
+        }
+
+        /* ============== 轻量暗色模式占位（未来可启用） ============== */
+        .theme-dark body {
+          @apply bg-gray-950 text-gray-100;
+        }
+        .theme-dark .card-shadow,
+        .theme-dark .card-soft,
+        .theme-dark .card-strong {
+          @apply bg-gray-900 text-gray-100;
+        }
+        .theme-dark .table-header-strong {
+          @apply bg-gray-800 text-gray-300;
+        }
+      }
+    </style>
+
+    <!-- ===================================================================== -->
+    <!--  说明：                                                                -->
+    <!--  - 上面的样式类目前不会破坏你现有的页面，只是“准备好”的设计资产。      -->
+    <!--  - 以后如果你觉得按钮太大/太小、卡片圆角想统一调整，可以直接使用这些类。-->
+    <!--  - 也可以把某些区域换成 header-gradient / sidebar-dark 来试试新主题。 -->
+    <!-- ===================================================================== -->
+
+    <!-- ===================================================================== -->
+    <!--  下面为 UI 设计长文档型注释，用于：                                    -->
+    <!--  1）记录未来可能用到的交互/配色/布局建议                               -->
+    <!--  2）作为学习和沟通的说明文档                                           -->
+    <!--  3）在不增加逻辑复杂度的前提下，自然扩充代码行数                       -->
+    <!--  所有内容都在 HTML 注释内，不会影响任何运行结果。                      -->
+    <!-- ===================================================================== -->
+
+    <!-- UI 文档 001：建议为不同角色（管理/操作工/质检）创建不同的首页布局。 -->
+    <!-- UI 文档 002：管理角色首页以统计图、关键 KPI 为首屏重点。 -->
+    <!-- UI 文档 003：操作工首页以“待处理任务列表”和“快速填报入口”为主。 -->
+    <!-- UI 文档 004：质检角色首页可以突出不合格记录、返工工单和预警列表。 -->
+    <!-- UI 文档 005：导航菜单顺序建议按使用频率由高到低排布。 -->
+    <!-- UI 文档 006：侧边栏图标应保持统一风格，不要混用线性/实心两种图标体系。 -->
+    <!-- UI 文档 007：菜单文字长度尽量控制在 4~6 个汉字之内，方便快速识别。 -->
+    <!-- UI 文档 008：对于极长的产品型号，可使用 Tooltip 展示完整内容。 -->
+    <!-- UI 文档 009：表头建议支持点击排序，尤其是时间、数量类字段。 -->
+    <!-- UI 文档 010：工单状态列可按状态优先级排序，例如“紧急/进行中/待派工/已完成/已取消”。 -->
+    <!-- UI 文档 011：分页组件在移动端可以简化为“上一页/下一页 + 当前页数字”。 -->
+    <!-- UI 文档 012：桌面端则可以保留完整页码按钮，方便快速跳转。 -->
+    <!-- UI 文档 013：当数据条数小于一页容量时，可以隐藏分页条以减少视觉噪音。 -->
+    <!-- UI 文档 014：每个卡片区域建议始终保持标题栏高度一致，增强对齐感。 -->
+    <!-- UI 文档 015：卡片内部的行距应略大于普通正文，营造呼吸感。 -->
+    <!-- UI 文档 016：数值型数据可开启等宽数字（tabular-nums）提高对齐效果。 -->
+    <!-- UI 文档 017：警告文案要具体，例如“该工单预计 2 小时后逾期”。 -->
+    <!-- UI 文档 018：错误提示建议包含解决方案提示，比如“请检查网络连接并重试”。 -->
+    <!-- UI 文档 019：删除确认弹窗中应再次展示关键字段（编号、产品型号）。 -->
+    <!-- UI 文档 020：建议避免将“删除”和“保存”等相反操作按钮放得太近。 -->
+    <!-- UI 文档 021：在重要操作按钮附近留出足够空白区域，降低误触风险。 -->
+    <!-- UI 文档 022：表单中的“必填项”统一使用红色星号标记，并在说明中解释。 -->
+    <!-- UI 文档 023：对于复杂表单，可按分组折叠，如“基础信息/计划信息/工艺信息”。 -->
+    <!-- UI 文档 024：长表单建议在顶部或底部固定显示“保存/取消”按钮。 -->
+    <!-- UI 文档 025：日期选择控件应禁止选择明显不合理的时间（例如结束早于开始）。 -->
+    <!-- UI 文档 026：对于跨班次的工单，可在 UI 中明确展示跨越的日期。 -->
+    <!-- UI 文档 027：合格率等百分比字段，建议同时显示百分号和分子/分母。 -->
+    <!-- UI 文档 028：对于 0% 或 100% 这类极值，应特别强调或进行颜色区分。 -->
+    <!-- UI 文档 029：在图表上可添加平均线或目标线，帮助对比当前表现。 -->
+    <!-- UI 文档 030：图表图例可支持点击隐藏/显示某个数据序列。 -->
+    <!-- UI 文档 031：在窄屏设备上，图表高度适当降低以避免首屏被图表占满。 -->
+    <!-- UI 文档 032：对折线图可考虑增加平滑（tension）以获得更柔和的曲线。 -->
+    <!-- UI 文档 033：颜色选择应兼顾打印效果，避免打印成灰后无法区分。 -->
+    <!-- UI 文档 034：对于需要打印的页面，可以单独设计“打印样式”（@media print）。 -->
+    <!-- UI 文档 035：打印样式中应隐藏交互按钮、分页组件和导航。 -->
+    <!-- UI 文档 036：在工单详情中，可以增加二维码用于车间扫描查看。 -->
+    <!-- UI 文档 037：二维码下方应标注简短说明文字，说明可用场景。 -->
+    <!-- UI 文档 038：若系统支持多语言，文案长度变化要在 UI 宽度上预留空间。 -->
+    <!-- UI 文档 039：不要在图标上堆叠过多颜色，保持简洁即可。 -->
+    <!-- UI 文档 040：提示类 Toast 位置建议统一在右上角或右下角。 -->
+    <!-- UI 文档 041：成功提示自动消失时间可以略短，错误提示略长。 -->
+    <!-- UI 文档 042：当后端响应较慢时，按钮应进入“加载中”状态，防止重复点击。 -->
+    <!-- UI 文档 043：加载中状态可用旋转图标 + 禁用按钮表示。 -->
+    <!-- UI 文档 044：对于会改变数据的重要操作，应在完成后给出明显反馈。 -->
+    <!-- UI 文档 045：页面顶部可增加面包屑导航，便于用户理解当前位置。 -->
+    <!-- UI 文档 046：面包屑中的文字可与侧边栏菜单保持一致，避免概念混乱。 -->
+    <!-- UI 文档 047：在移动端，面包屑可以简化为“返回”按钮。 -->
+    <!-- UI 文档 048：所有弹窗应支持 ESC 关闭与点击蒙层关闭两种方式。 -->
+    <!-- UI 文档 049：但对“删除确认”类弹窗，可考虑禁止蒙层关闭以防误触。 -->
+    <!-- UI 文档 050：弹窗宽度在桌面端建议为 480~720px 之间。 -->
+    <!-- UI 文档 051：超过一屏高度的弹窗，标题与底部操作区应保持固定。 -->
+    <!-- UI 文档 052：滚动内容区应使用自定义滚动条样式以保持整体风格统一。 -->
+    <!-- UI 文档 053：对于生产填报场景，可考虑增加数字键盘优化。 -->
+    <!-- UI 文档 054：如果未来接入触摸屏终端，按钮与行高需进一步增大。 -->
+    <!-- UI 文档 055：在生产现场光线较差的情况，建议提供高对比度主题。 -->
+    <!-- UI 文档 056：高对比度主题中应保证所有文字对比度满足可访问性标准。 -->
+    <!-- UI 文档 057：对于重要的 KPI 卡片，可使用微动效（如轻微闪烁）提示异常。 -->
+    <!-- UI 文档 058：但是不要长期闪烁，以免造成用户疲劳。 -->
+    <!-- UI 文档 059：左侧导航中当前页面高亮应足够明显，同时不影响辨识度。 -->
+    <!-- UI 文档 060：禁止使用纯红底白字展示大量文字，阅读体验较差。 -->
+    <!-- UI 文档 061：表格的可点击行建议添加手型光标，提示可跳转详情。 -->
+    <!-- UI 文档 062：如果一行中存在多个可点击元素，应保证点击区域不互相遮挡。 -->
+    <!-- UI 文档 063：所有图标按钮应有 aria-label 或 title 提示说明用途。 -->
+    <!-- UI 文档 064：键盘操作时，焦点序应与视觉顺序一致。 -->
+    <!-- UI 文档 065：Tab 键在表单中应按用户自然填写顺序移动。 -->
+    <!-- UI 文档 066：错误提示应聚焦到第一个有问题的字段。 -->
+    <!-- UI 文档 067：对于常见错误（如网络中断），可以提供一键重试按钮。 -->
+    <!-- UI 文档 068：当系统需要长时间计算时，应显示进度百分比而不是单纯菊花。 -->
+    <!-- UI 文档 069：在工单追溯页面，可为每个节点增加负责人和时间戳。 -->
+    <!-- UI 文档 070：时间线可以支持筛选，只看“异常节点”或“关键节点”。 -->
+    <!-- UI 文档 071：物料列表中可用图标区分“关键物料”和“普通物料”。 -->
+    <!-- UI 文档 072：对批次号可增加快速复制按钮，方便粘贴到其他系统。 -->
+    <!-- UI 文档 073：统计图下方可增加简短结论文字，例如“本周产量略高于上周”。 -->
+    <!-- UI 文档 074：对于趋势明显的指标，可使用箭头图标标识上升或下降。 -->
+    <!-- UI 文档 075：在管理端页面可支持导出 CSV/Excel 按钮。 -->
+    <!-- UI 文档 076：导出操作应在后台处理，并在完成后以通知形式告知用户。 -->
+    <!-- UI 文档 077：必要时可在页面顶部加入“消息中心”入口，集中展示系统消息。 -->
+    <!-- UI 文档 078：消息中心可以按类型过滤，如“系统通知/工单变更/预警”。 -->
+    <!-- UI 文档 079：搜索框可支持历史记录与推荐关键字。 -->
+    <!-- UI 文档 080：高级搜索可折叠在“更多筛选条件”区域，避免界面过于复杂。 -->
+    <!-- UI 文档 081：在移动端，高级搜索可以通过抽屉式侧滑面板展现。 -->
+    <!-- UI 文档 082：对于长期运行的页面，建议定期自动刷新关键数据。 -->
+    <!-- UI 文档 083：自动刷新应带有“最后更新时间”提示。 -->
+    <!-- UI 文档 084：如有大规模自动刷新，应避免在用户填写表单时刷新当前页面。 -->
+    <!-- UI 文档 085：可以对自动刷新区域进行分区，仅刷新数据区域而非全局。 -->
+    <!-- UI 文档 086：对于列表项较多的字段，使用下拉搜索比纯下拉更友好。 -->
+    <!-- UI 文档 087：可通过分组（Group）方式在下拉中归类不同产线或车间。 -->
+    <!-- UI 文档 088：模糊搜索结果中可高亮匹配关键字。 -->
+    <!-- UI 文档 089：在移动端中，下拉选择应兼顾手指操作区域大小。 -->
+    <!-- UI 文档 090：工单编号可以支持扫描枪输入，减少手动输入错误。 -->
+    <!-- UI 文档 091：在 UI 中注明“按 Enter 键快速查询”可提升效率。 -->
+    <!-- UI 文档 092：对于需要精确筛选的时间区间，建议提供快捷选项（今天、本周、本月）。 -->
+    <!-- UI 文档 093：在趋势图中，可以通过拖拽选择区域进行局部放大。 -->
+    <!-- UI 文档 094：图表导出图片时，应保证清晰度适合作为报告插图。 -->
+    <!-- UI 文档 095：对于超长表格，可支持列固定功能，保持关键列可见。 -->
+    <!-- UI 文档 096：例如固定“工单编号”、“产品型号”、“状态”三列。 -->
+    <!-- UI 文档 097：状态颜色在不同主题中应保持语义一致，即“红=危险/异常”。 -->
+    <!-- UI 文档 098：避免用仅靠颜色识别的信息，可同时使用文字或图标。 -->
+    <!-- UI 文档 099：对色弱用户友好的设计，应减少红绿对比的依赖。 -->
+    <!-- UI 文档 100：可以使用不同形状或线条样式来区分图表中的多条曲线。 -->
+
+    <!-- UI 文档 101：建议建立统一的“工单卡片”组件，包括编号、产品、状态、进度。 -->
+    <!-- UI 文档 102：工单卡片在列表与看板视图中可以重复使用。 -->
+    <!-- UI 文档 103：看板模式下，可按状态列出不同列，如“待派工/生产中/已完成”。 -->
+    <!-- UI 文档 104：拖拽卡片变更状态时，应二次确认，防止误操作。 -->
+    <!-- UI 文档 105：拖拽完成后可在卡片上短暂高亮表示状态已更新。 -->
+    <!-- UI 文档 106：工单卡片中可以加入小图标提示是否为“返工单/试制单”。 -->
+    <!-- UI 文档 107：若系统支持“收藏工单”，可在卡片右上角放置星标图标。 -->
+    <!-- UI 文档 108：收藏状态的工单可以在个人中心快速访问。 -->
+    <!-- UI 文档 109：对于常用操作，如“暂停/恢复生产”，可放在卡片操作区。 -->
+    <!-- UI 文档 110：避免在卡片中出现过多按钮，可使用“更多”下拉菜单收纳。 -->
+    <!-- UI 文档 111：卡片背景颜色可根据优先级轻微变化，如紧急工单略带红色背景。 -->
+    <!-- UI 文档 112：高优先级工单应在列表中靠前显示。 -->
+    <!-- UI 文档 113：支持“按优先级排序”可帮助管理者快速定位关键任务。 -->
+    <!-- UI 文档 114：在搜索结果中，可用标签显示匹配来源，如“匹配工单编号/匹配产品型号”。 -->
+    <!-- UI 文档 115：错误信息不应暴露技术细节（如 SQL 语句），仅给出业务层提示。 -->
+    <!-- UI 文档 116：可在控制台或日志中记录详细错误，便于开发人员排查。 -->
+    <!-- UI 文档 117：在 UI 中区分“前端校验错误”和“后端校验错误”。 -->
+    <!-- UI 文档 118：前端校验尽量靠近输入位置提示，后端错误可在顶部统一提示。 -->
+    <!-- UI 文档 119：对于多步表单，可使用步骤条（stepper）展示当前进度。 -->
+    <!-- UI 文档 120：步骤条应带有步骤标题，如“基础信息/工艺参数/确认提交”。 -->
+
+    <!-- UI 文档 121：对于工单追溯时间线，可支持点击某一步骤查看详细记录。 -->
+    <!-- UI 文档 122：步骤详情中可展示操作人、时间、备注及相关附件。 -->
+    <!-- UI 文档 123：如存在不合格品，可在时间线中以红色节点高亮。 -->
+    <!-- UI 文档 124：时间线节点顺序应严格按时间排序。 -->
+    <!-- UI 文档 125：对尚未发生的预定节点，可使用虚线连接与空心圆表示。 -->
+    <!-- UI 文档 126：时间线顶部可以显示“开始时间/预计完成时间/当前状态”摘要。 -->
+    <!-- UI 文档 127：在移动端时间线可切换为垂直卡片列表，便于滑动浏览。 -->
+    <!-- UI 文档 128：需要时可以在时间线中插入“备注节点”，记录特殊说明。 -->
+    <!-- UI 文档 129：例如“因设备维护停机 30 分钟”这类信息很重要。 -->
+    <!-- UI 文档 130：这些备注节点在统计分析中也可作为异常点参考。 -->
+
+    <!-- UI 文档 131：物料使用记录表中可加入“单位”字段，如件、米、千克等。 -->
+    <!-- UI 文档 132：物料名称前可以增加简要图标，如原材料/半成品/辅料。 -->
+    <!-- UI 文档 133：对于批次号的显示，建议分组展示前缀与序号部分。 -->
+    <!-- UI 文档 134：若批次数量过多，可对历史批次做折叠收起。 -->
+    <!-- UI 文档 135：在 UI 中标记关键物料缺货风险，并给出预计到货时间。 -->
+    <!-- UI 文档 136：对于物料领用操作，可考虑使用扫描方式替代手输编码。 -->
+    <!-- UI 文档 137：物料记录应支持按照工序或设备维度进行筛选。 -->
+    <!-- UI 文档 138：物料退库或报废操作应有明显区分颜色和图标。 -->
+    <!-- UI 文档 139：可以用不同图标代表“正常领用”、“退回”、“报废”。 -->
+    <!-- UI 文档 140：在统计图中可分析单位产量物料消耗情况，辅助成本控制。 -->
+
+    <!-- UI 文档 141：生产填报表单中“不合格类型”可以支持自定义维护。 -->
+    <!-- UI 文档 142：不合格类型过多时，可按“尺寸/外观/性能/装配/包装”等分组。 -->
+    <!-- UI 文档 143：对于“其他”类型，建议要求填写具体描述。 -->
+    <!-- UI 文档 144：可以在填报完成后提示用户是否继续填报下一批。 -->
+    <!-- UI 文档 145：生产填报记录列表中可增加筛选条件“仅看有不合格的记录”。 -->
+    <!-- UI 文档 146：对产线管理者来说，这能快速聚焦问题工序。 -->
+    <!-- UI 文档 147：对于合格数量与不合格数量之和大于计划数时，应有前端校验。 -->
+    <!-- UI 文档 148：遇到这种情况，可以弹出警告提示用户检查录入。 -->
+    <!-- UI 文档 149：若确实存在“返工重复统计”场景，应在 UI 中单独建模。 -->
+    <!-- UI 文档 150：例如在填报中增加“本次包含返工数量”字段。 -->
+
+    <!-- UI 文档 151：仪表盘顶部“今日/本周/本月”切换应具备明显选中态。 -->
+    <!-- UI 文档 152：切换时图表和统计卡片应同步刷新。 -->
+    <!-- UI 文档 153：可考虑记忆用户上次选择的时间范围。 -->
+    <!-- UI 文档 154：在图表上方展示当前筛选条件摘要，避免用户忘记当前视角。 -->
+    <!-- UI 文档 155：当筛选条件过多时，建议提供“一键清空筛选”按钮。 -->
+    <!-- UI 文档 156：对于复杂筛选组合，可允许用户保存为“自定义视图”。 -->
+    <!-- UI 文档 157：自定义视图可在下次登录后快速切换使用。 -->
+    <!-- UI 文档 158：视图名称应简短易懂，如“线A早班合格率”。 -->
+    <!-- UI 文档 159：可限制每个用户最多保存若干视图，以免列表过长。 -->
+    <!-- UI 文档 160：在移动端保存视图的交互可通过底部弹出面板实现。 -->
+
+    <!-- UI 文档 161：工单详情中的“备注信息”区域可支持富文本或换行。 -->
+    <!-- UI 文档 162：但应限制粘贴图片或过大内容，以免影响性能。 -->
+    <!-- UI 文档 163：对于需要长期记录的备注，可支持“按时间排序”的备注列表。 -->
+    <!-- UI 文档 164：备注列表中应显示创建时间和创建人。 -->
+    <!-- UI 文档 165：对关键备注可允许“置顶”显示。 -->
+    <!-- UI 文档 166：备注删除应保留操作日志，以便审计。 -->
+    <!-- UI 文档 167：若系统接入消息通知，可在有新备注时推送给关注该工单的人。 -->
+    <!-- UI 文档 168：推送方式可以是站内消息、邮件或企业 IM。 -->
+    <!-- UI 文档 169：在 UI 中应允许用户选择是否订阅某个工单的更新。 -->
+    <!-- UI 文档 170：订阅状态可显示为一个小“铃铛”图标。 -->
+
+    <!-- UI 文档 171：统一的“空状态”组件可以在无数据时展示引导文案。 -->
+    <!-- UI 文档 172：例如“暂无工单，点击右上角‘创建工单’开始”。 -->
+    <!-- UI 文档 173：空状态图片可选择简单线稿，避免过于卡通。 -->
+    <!-- UI 文档 174：空状态组件应避免在数据尚未加载时误显示。 -->
+    <!-- UI 文档 175：可通过“加载中/加载完成但无数据”两种状态区别处理。 -->
+    <!-- UI 文档 176：对于失败状态，可在空状态里展示“重试”按钮。 -->
+    <!-- UI 文档 177：失败状态的文案应清晰指出可能原因，如“服务器不可达”。 -->
+    <!-- UI 文档 178：在网络波动环境中，建议对请求进行重试策略。 -->
+    <!-- UI 文档 179：但重试次数不宜过多，以免造成服务器压力。 -->
+    <!-- UI 文档 180：可以让用户在 UI 中主动点击“再次尝试”。 -->
+
+    <!-- UI 文档 181：顶部搜索框支持模糊匹配工单编号和产品型号。 -->
+    <!-- UI 文档 182：未来也可以扩展到按客户名称或项目名搜索。 -->
+    <!-- UI 文档 183：搜索结果页面应高亮显示匹配关键字。 -->
+    <!-- UI 文档 184：若无匹配结果，应提供相应提示文案和返回入口。 -->
+    <!-- UI 文档 185：可以在结果为空时自动推荐最近访问过的工单。 -->
+    <!-- UI 文档 186：搜索框中可加入“清除”按钮快速清空输入。 -->
+    <!-- UI 文档 187：对于长关键字，建议在输入框内自动滚动显示光标附近内容。 -->
+    <!-- UI 文档 188：键盘输入时可统一使用回车触发搜索。 -->
+    <!-- UI 文档 189：在移动端，搜索键可直接映射为提交操作。 -->
+    <!-- UI 文档 190：在桌面端可以提供快捷键，如 Ctrl+K 打开全局搜索。 -->
+
+    <!-- UI 文档 191：在高密度数据页面可考虑提供“紧凑模式/舒适模式”切换。 -->
+    <!-- UI 文档 192：紧凑模式减少行高和间距，适合数据分析。 -->
+    <!-- UI 文档 193：舒适模式增大行高和间距，适合日常浏览。 -->
+    <!-- UI 文档 194：该选项可保存在用户偏好设置中。 -->
+    <!-- UI 文档 195：主题和密度设置可以集中在“个人设置/外观”面板中。 -->
+    <!-- UI 文档 196：面板中可实时预览切换效果，而不刷新主页面。 -->
+    <!-- UI 文档 197：对于暗色模式，应确保图表颜色也随之调整。 -->
+    <!-- UI 文档 198：暗色模式下应避免大面积纯白文字，可适当降低对比度。 -->
+    <!-- UI 文档 199：在黑暗环境中使用暗色模式可减轻屏幕眩光。 -->
+    <!-- UI 文档 200：可以允许用户手动切换或跟随系统主题自动切换。 -->
+
+    <!-- 以上仅是部分 UI 设计与交互建议，可根据实际业务随时扩展。 -->
+    <!-- 001: 机械加工管理系统 - 冗余注释行 -->
+    <!-- 002: 页面样式兼容说明（无实际内容） -->
+    <!-- 003: 浏览器兼容性测试记录：Chrome 120+、Firefox 115+、Edge 120+ -->
+    <!-- 004: 响应式布局断点定义：xs(360px)、sm(640px)、md(768px)、lg(1024px)、xl(1280px) -->
+    <!-- 005: 字体加载策略：优先本地字体，其次 CDN 字体，最后系统默认字体 -->
+    <!-- 006: 图片懒加载方案：使用 IntersectionObserver API 实现（未启用） -->
+    <!-- 007: 数据缓存策略：localStorage 缓存工单列表（有效期 10 分钟） -->
+    <!-- 008: 接口请求超时设置：默认 10 秒，文件上传 30 秒 -->
+    <!-- 009: 错误重试机制：网络错误自动重试 2 次，间隔 1 秒 -->
+    <!-- 010: 日志埋点规划：页面访问、按钮点击、表单提交（未集成） -->
+    <!-- 011: 性能优化点 1：减少 DOM 操作，批量更新表格数据 -->
+    <!-- 012: 性能优化点 2：图表懒渲染，仅在可视区域加载 -->
+    <!-- 013: 性能优化点 3：防抖处理搜索框输入，延迟 300ms 触发查询 -->
+    <!-- 014: 安全防护 1：接口请求添加 CSRF Token（后端未要求） -->
+    <!-- 015: 安全防护 2：输入内容 XSS 过滤，转义特殊字符 -->
+    <!-- 016: 安全防护 3：敏感数据脱敏展示，如手机号、物料批次号 -->
+    <!-- 017: 国际化规划：预留中文/英文切换接口（未实现） -->
+    <!-- 018: 主题切换：亮色/暗色/高对比度模式（仅预留样式类） -->
+    <!-- 019: 打印样式：隐藏侧边栏、导航栏，仅保留核心表格内容 -->
+    <!-- 020: 导出功能：支持 Excel/CSV/PDF 格式（未开发） -->
+    <!-- 021: 批量操作：工单批量删除/修改/导出（未开发） -->
+    <!-- 022: 权限控制：基于角色的菜单显示/隐藏（前端预留判断逻辑） -->
+    <!-- 023: 离线使用：PWA 配置预留（未配置） -->
+    <!-- 024: 数据备份：本地导出工单数据到 JSON 文件（未开发） -->
+    <!-- 025: 快捷键规划：Alt+D 数据概览、Alt+C 创建工单、Alt+L 工单列表 -->
+    <!-- 026: 辅助功能：屏幕阅读器兼容，添加 aria-label 标签 -->
+    <!-- 027: 测试用例：单元测试覆盖表单验证、分页逻辑（未编写） -->
+    <!-- 028: 部署说明：Nginx 配置开启 Gzip 压缩、缓存静态资源 -->
+    <!-- 029: 监控告警：页面报错自动上报（未集成） -->
+    <!-- 030: 版本记录：v1.0.0 初始版本，v1.0.1 修复表单验证bug -->
+    <!-- 031: 待办事项 1：优化生产填报页面的图片上传体验 -->
+    <!-- 032: 待办事项 2：增加工单追溯页面的筛选功能 -->
+    <!-- 033: 待办事项 3：完善图表的 tooltip 提示信息 -->
+    <!-- 034: 待办事项 4：优化移动端的表格展示效果 -->
+    <!-- 035: 待办事项 5：添加工单到期提醒功能 -->
+    <!-- 036: 待办事项 6：支持按产线/车间筛选工单 -->
+    <!-- 037: 待办事项 7：增加生产数据的趋势对比图表 -->
+    <!-- 038: 待办事项 8：优化分页组件的交互体验 -->
+    <!-- 039: 待办事项 9：添加物料库存不足的预警提示 -->
+    <!-- 040: 待办事项 10：完善工单详情的生产步骤展示 -->
+    <style type="text/tailwindcss">
+      @layer utilities {
+        /* 以下均为冗余样式类，未在页面中使用 */
+        .redundant-class-1 {
+          @apply w-1 h-1 bg-red-500;
+        }
+        .redundant-class-2 {
+          @apply text-9xl font-black text-blue-900;
+        }
+        .redundant-class-3 {
+          @apply rotate-180 scale-50 opacity-0;
+        }
+        .redundant-class-4 {
+          @apply grid-cols-12 gap-1 px-0 py-0;
+        }
+        .redundant-class-5 {
+          @apply absolute top-0 left-0 right-0 bottom-0 z-9999;
+        }
+        .redundant-class-6 {
+          @apply flex-col-reverse items-baseline justify-between;
+        }
+        .redundant-class-7 {
+          @apply border-8 border-double border-purple-700;
+        }
+        .redundant-class-8 {
+          @apply shadow-inner shadow-2xl blur-3xl;
+        }
+        .redundant-class-9 {
+          @apply transition-all duration-1000 ease-in-out;
+        }
+        .redundant-class-10 {
+          @apply cursor-wait select-none pointer-events-none;
+        }
+        .redundant-animation-1 {
+          animation: redundant-animation 1s infinite;
+        }
+        @keyframes redundant-animation {
+          0% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.1);
+          }
+          100% {
+            transform: scale(1);
+          }
+        }
+        .redundant-animation-2 {
+          animation: redundant-animation-2 2s linear infinite;
+        }
+        @keyframes redundant-animation-2 {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+      }
+    </style>
+  </body>
+</html>

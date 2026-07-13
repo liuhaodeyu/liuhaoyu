@@ -1,0 +1,9 @@
+﻿node_modules/
+.env
+.env.local
+database.sqlite
+.idea/
+*.iml
+*.log
+Thumbs.db
+Desktop.ini
